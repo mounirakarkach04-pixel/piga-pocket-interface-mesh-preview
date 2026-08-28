@@ -2,20 +2,21 @@
   "$schema": "./node_modules/wrangler/config-schema.json",
   "name": "piga-pocket-interface-mesh-preview",
   "main": "./src/index.js",
-  "compatibility_date": "2026-08-26",
+  "compatibility_date": "2026-08-28",
   "workers_dev": true,
   "assets": {
     "directory": "./public",
     "binding": "ASSETS",
     "not_found_handling": "single-page-application",
-    "run_worker_first": ["/healthz", "/api/*"]
+    "run_worker_first": true
   },
   "observability": {
     "enabled": true,
     "head_sampling_rate": 1
   },
   "vars": {
-    "APP_ENV": "preview",
-    "SOURCE_COMMIT": "a79564a8f074000640e3309780bef410d0b10e76"
+    "APP_ENV": "showroom",
+    "SOURCE_COMMIT": "showroom-proxy-v1",
+    "SHOWROOM_ORIGIN": "https://piga-pocket-showroom.piga-pocket-9123.chatgpt.site"
   }
 }

@@ -1,18 +1,18 @@
-# PIGA Pocket Interface Mesh – Cloudflare Preview
+# PIGA Pocket Showroom Edge
 
-A self-contained Cloudflare Worker for the current PIGA Pocket interface-mesh preview.
-
-[![Deploy to Cloudflare](https://deploy.workers.cloudflare.com/button)](https://deploy.workers.cloudflare.com/?url=https://github.com/mounirakarkach04-pixel/piga-phone-bridge-android/tree/main/cloudflare-preview-template)
+The existing Cloudflare Worker remains attached to `pigapocket.com` and acts as the governed edge for the public PIGA Pocket Showroom.
 
 ## Contract
 
-- public visual preview only
-- five governed engines
-- A7SEM Reverse is a continuous meta-operator, not a sixth engine
-- `/healthz` returns a machine-readable preview receipt
-- `/api/*` fails closed with no execution authority
-- no secrets and no production-domain route
-- source UI contract: `a79564a8f074000640e3309780bef410d0b10e76`
+- proxies public showroom requests to the hosted PIGA Pocket site
+- keeps the previous static interface mesh as a GET/HEAD fallback
+- preserves the existing Worker, custom domain, and static assets
+- `/healthz` returns a machine-readable deployment receipt
+- non-idempotent requests fail closed if the upstream is unavailable
+- strips client-IP forwarding headers before proxying
+- adds PIGA security and authority headers to every response
+- contains no secrets and grants no external execution authority
+- A7SEM Reverse remains a continuous meta-operator, not a sixth engine
 
 ## Local validation
 
