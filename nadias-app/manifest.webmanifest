@@ -1,0 +1,9 @@
+{
+  "name":"Nadias App",
+  "short_name":"Nadia",
+  "start_url":"./",
+  "display":"standalone",
+  "background_color":"#fbf6ef",
+  "theme_color":"#b56f7d",
+  "icons":[{"src":"icon.svg","sizes":"any","type":"image/svg+xml","purpose":"any maskable"}]
+}
