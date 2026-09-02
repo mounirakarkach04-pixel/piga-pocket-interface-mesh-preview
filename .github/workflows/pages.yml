@@ -1,0 +1,41 @@
+name: Deploy Nadia Family App from gh-pages
+
+on:
+  push:
+    branches: [gh-pages]
+    paths:
+      - 'nadia/**'
+      - '.github/workflows/pages.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    environment:
+      name: nadia-pages
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout gh-pages
+        uses: actions/checkout@v4
+      - name: Configure Pages
+        uses: actions/configure-pages@v5
+      - name: Prepare Nadia site
+        run: |
+          mkdir -p _site/nadia
+          cp -R nadia/. _site/nadia/
+          touch _site/.nojekyll
+      - name: Upload site
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
