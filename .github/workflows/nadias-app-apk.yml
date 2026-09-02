@@ -1,0 +1,81 @@
+name: Build Nadias App APK
+
+on:
+  push:
+    branches: [nadias-app-public]
+    paths:
+      - 'nadias-app/**'
+      - 'nadias-app-android/**'
+      - '.github/workflows/nadias-app-apk.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  build-apk:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout release branch
+        uses: actions/checkout@v4
+
+      - name: Set up Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.11.1'
+
+      - name: Embed Nadias App web bundle
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p nadias-app-android/app/src/main/assets
+          cp -R nadias-app/. nadias-app-android/app/src/main/assets/
+          cat >> nadias-app-android/app/src/main/assets/app.js <<'EOF'
+          window.install = function(){ alert('Nadias App ist bereits als Android-App installiert.'); };
+          EOF
+
+      - name: Build release APK
+        shell: bash
+        run: |
+          set -euo pipefail
+          gradle -p nadias-app-android :app:assembleRelease --no-daemon --stacktrace
+
+      - name: Prepare release files
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p release
+          cp nadias-app-android/app/build/outputs/apk/release/app-release.apk release/Nadias-App.apk
+          (cd release && sha256sum Nadias-App.apk > SHA256SUMS.txt)
+          test -s release/Nadias-App.apk
+
+      - name: Upload workflow artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Nadias-App-Android
+          path: release/
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Publish public GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: nadias-app-v1.0.0
+        shell: bash
+        run: |
+          set -euo pipefail
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            gh release delete "$TAG" --yes --cleanup-tag
+          fi
+          gh release create "$TAG" \
+            release/Nadias-App.apk \
+            release/SHA256SUMS.txt \
+            --target "$GITHUB_SHA" \
+            --title "Nadias App 1.0.0" \
+            --notes "Installierbare Android-Version von Nadias App. Lokal gespeicherte Family-Daten, Kalender, Aufgaben, Einkauf, Familie, Notizen, Routinen, Schnittstellen und Einstellungen."
