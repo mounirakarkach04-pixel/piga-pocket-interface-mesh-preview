@@ -1,12 +1,11 @@
 name: Build Nadias App APK
 
 on:
+  workflow_dispatch:
   push:
     branches: [nadias-app-public]
     paths:
-      - 'nadias-app/**'
-      - 'nadias-app-android/**'
-      - '.github/workflows/nadias-app-apk.yml'
+      - 'nadias-app-android/.build-trigger'
 
 permissions:
   contents: write
@@ -30,15 +29,13 @@ jobs:
         with:
           gradle-version: '8.11.1'
 
-      - name: Embed Nadias App web bundle
+      - name: Embed Nadias App V3
         shell: bash
         run: |
           set -euo pipefail
+          rm -rf nadias-app-android/app/src/main/assets
           mkdir -p nadias-app-android/app/src/main/assets
           cp -R nadias-app/. nadias-app-android/app/src/main/assets/
-          cat >> nadias-app-android/app/src/main/assets/app.js <<'EOF'
-          window.install = function(){ alert('Nadias App ist bereits als Android-App installiert.'); };
-          EOF
 
       - name: Build release APK
         shell: bash
@@ -51,14 +48,14 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p release
-          cp nadias-app-android/app/build/outputs/apk/release/app-release.apk release/Nadias-App.apk
-          (cd release && sha256sum Nadias-App.apk > SHA256SUMS.txt)
-          test -s release/Nadias-App.apk
+          cp nadias-app-android/app/build/outputs/apk/release/app-release.apk release/Nadias-App-V3.apk
+          (cd release && sha256sum Nadias-App-V3.apk > SHA256SUMS.txt)
+          test -s release/Nadias-App-V3.apk
 
       - name: Upload workflow artifact
         uses: actions/upload-artifact@v4
         with:
-          name: Nadias-App-Android
+          name: Nadias-App-V3-Android
           path: release/
           if-no-files-found: error
           retention-days: 30
@@ -66,7 +63,7 @@ jobs:
       - name: Publish public GitHub Release
         env:
           GH_TOKEN: ${{ github.token }}
-          TAG: nadias-app-v1.0.0
+          TAG: nadias-app-v3.0.0
         shell: bash
         run: |
           set -euo pipefail
@@ -74,8 +71,8 @@ jobs:
             gh release delete "$TAG" --yes --cleanup-tag
           fi
           gh release create "$TAG" \
-            release/Nadias-App.apk \
+            release/Nadias-App-V3.apk \
             release/SHA256SUMS.txt \
             --target "$GITHUB_SHA" \
-            --title "Nadias App 1.0.0" \
-            --notes "Installierbare Android-Version von Nadias App. Lokal gespeicherte Family-Daten, Kalender, Aufgaben, Einkauf, Familie, Notizen, Routinen, Schnittstellen und Einstellungen."
+            --title "Nadias App 3.0.0" \
+            --notes "Aktuelle Android-Version von Nadias App mit modernisiertem Family-Dashboard, eigenen Profilen für Nadia, Jakob, Noah, Soraya, Sara und Nia, Schule/Kita je Kinderprofil, Familienkalender, Aufgaben, Einkauf, Wochenessen, Routinen und verbesserter mobiler Navigation."
