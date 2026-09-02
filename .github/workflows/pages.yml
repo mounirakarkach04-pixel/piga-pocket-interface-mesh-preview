@@ -20,7 +20,7 @@ concurrency:
 jobs:
   deploy:
     environment:
-      name: github-pages
+      name: nadia-pages
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
