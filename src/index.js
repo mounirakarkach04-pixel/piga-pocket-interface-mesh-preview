@@ -26,20 +26,19 @@ function createUpstreamRequest(request, showroomOrigin) {
   const upstreamUrl = new URL(`${incomingUrl.pathname}${incomingUrl.search}`, showroomOrigin);
   const upstreamRequest = new Request(upstreamUrl, request);
   const headers = new Headers(upstreamRequest.headers);
-
-  for (const name of ["host", "cf-connecting-ip", "true-client-ip", "x-forwarded-for", "x-real-ip"]) {
-    headers.delete(name);
-  }
+  for (const name of ["host", "cf-connecting-ip", "true-client-ip", "x-forwarded-for", "x-real-ip"]) headers.delete(name);
   headers.set("x-forwarded-host", incomingUrl.host);
-
-  return new Request(upstreamRequest, {
-    headers,
-    redirect: "follow",
-  });
+  return new Request(upstreamRequest, { headers, redirect: "follow" });
 }
 
 async function fetchShowroom(request, showroomOrigin) {
   return fetch(createUpstreamRequest(request, showroomOrigin));
+}
+
+function assetRequest(request, pathname) {
+  const url = new URL(request.url);
+  url.pathname = pathname;
+  return new Request(url, request);
 }
 
 export default {
@@ -62,31 +61,24 @@ export default {
       }), true);
     }
 
+    if (url.pathname === "/nadia" || url.pathname.startsWith("/nadia/")) {
+      if (request.method !== "GET" && request.method !== "HEAD") {
+        return governed(Response.json({ error: "METHOD_NOT_ALLOWED", authority: "none" }, { status: 405 }), true);
+      }
+      const path = url.pathname === "/nadia" || url.pathname === "/nadia/" ? "/nadia/index.html" : url.pathname;
+      return governed(await env.ASSETS.fetch(assetRequest(request, path)));
+    }
+
     try {
       const upstreamResponse = await fetchShowroom(request, env.SHOWROOM_ORIGIN);
       if (upstreamResponse.status < 500) return governed(upstreamResponse, request.method !== "GET");
-
-      console.error(JSON.stringify({
-        event: "showroom_upstream_unavailable",
-        status: upstreamResponse.status,
-        path: url.pathname
-      }));
+      console.error(JSON.stringify({ event: "showroom_upstream_unavailable", status: upstreamResponse.status, path: url.pathname }));
     } catch (error) {
-      console.error(JSON.stringify({
-        event: "showroom_upstream_error",
-        message: error instanceof Error ? error.message : "unknown",
-        path: url.pathname
-      }));
+      console.error(JSON.stringify({ event: "showroom_upstream_error", message: error instanceof Error ? error.message : "unknown", path: url.pathname }));
     }
 
-    if (request.method === "GET" || request.method === "HEAD") {
-      return governed(await env.ASSETS.fetch(request));
-    }
+    if (request.method === "GET" || request.method === "HEAD") return governed(await env.ASSETS.fetch(request));
 
-    return governed(Response.json({
-      error: "SHOWROOM_UPSTREAM_UNAVAILABLE",
-      authority: "none",
-      gate: "closed"
-    }, { status: 503 }), true);
+    return governed(Response.json({ error: "SHOWROOM_UPSTREAM_UNAVAILABLE", authority: "none", gate: "closed" }, { status: 503 }), true);
   }
 };
