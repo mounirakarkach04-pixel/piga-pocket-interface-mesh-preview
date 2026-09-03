@@ -1,4 +1,4 @@
-name: Deploy Nadia Family App from gh-pages
+name: Deploy Interface Apps from gh-pages
 
 on:
   push:
@@ -27,10 +27,27 @@ jobs:
         uses: actions/checkout@v4
       - name: Configure Pages
         uses: actions/configure-pages@v5
-      - name: Prepare Nadia site
+      - name: Prepare interface apps
+        shell: bash
         run: |
-          mkdir -p _site/nadia
+          set -euo pipefail
+          mkdir -p _site/nadia _site/aeiou
           cp -R nadia/. _site/nadia/
+
+          AEIOU_BASE='https://qjvopzschqukitvudgfz.supabase.co/functions/v1/aeiou-kids-live'
+          curl --fail --silent --show-error --location "$AEIOU_BASE/" -o _site/aeiou/index.html
+          curl --fail --silent --show-error --location "$AEIOU_BASE/manifest.webmanifest" -o _site/aeiou/manifest.webmanifest
+          curl --fail --silent --show-error --location "$AEIOU_BASE/sw.js" -o _site/aeiou/sw.js
+          curl --fail --silent --show-error --location "$AEIOU_BASE/health" -o _site/aeiou/source-health.json
+
+          grep -q '<html' _site/aeiou/index.html
+          grep -q 'AMINA RC2' _site/aeiou/index.html
+          grep -q 'Noor-Garten' _site/aeiou/index.html
+          grep -q 'Die Laterne, die zurückkam' _site/aeiou/index.html
+          grep -q 'aeiou.rc2.settings' _site/aeiou/index.html
+          grep -q '"status":"PASS"' _site/aeiou/source-health.json
+          grep -q '"stories":18' _site/aeiou/source-health.json
+          grep -q '"songs":8' _site/aeiou/source-health.json
           touch _site/.nojekyll
       - name: Upload site
         uses: actions/upload-pages-artifact@v3
