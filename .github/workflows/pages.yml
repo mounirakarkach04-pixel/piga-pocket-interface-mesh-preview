@@ -1,4 +1,4 @@
-name: Deploy Nadia Family App to GitHub Pages
+name: Deploy PIGA Interface Apps to GitHub Pages
 
 on:
   push:
@@ -27,10 +27,26 @@ jobs:
         uses: actions/checkout@v4
       - name: Configure Pages
         uses: actions/configure-pages@v5
-      - name: Prepare Pages artifact
+      - name: Prepare proven static Pages artifact
+        shell: bash
         run: |
-          mkdir -p _site/nadia
+          set -euo pipefail
+          mkdir -p _site/nadia _site/aeiou
           cp -R nadia/. _site/nadia/
+
+          AEIOU_BASE='https://qjvopzschqukitvudgfz.supabase.co/functions/v1/aeiou-kids-app'
+          curl --fail --silent --show-error --location "$AEIOU_BASE/" -o _site/aeiou/index.html
+          curl --fail --silent --show-error --location "$AEIOU_BASE/manifest.webmanifest" -o _site/aeiou/manifest.webmanifest
+          curl --fail --silent --show-error --location "$AEIOU_BASE/sw.js" -o _site/aeiou/sw.js
+          curl --fail --silent --show-error --location "$AEIOU_BASE/icon.svg" -o _site/aeiou/icon.svg
+          curl --fail --silent --show-error --location "$AEIOU_BASE/health" -o _site/aeiou/source-health.json
+
+          grep -q '<html' _site/aeiou/index.html
+          grep -q 'AEIOU' _site/aeiou/index.html
+          grep -q 'Noor Stories' _site/aeiou/index.html
+          grep -q 'Amina' _site/aeiou/index.html
+          grep -q 'Singmodus' _site/aeiou/index.html
+          grep -q '"status":"PASS"' _site/aeiou/source-health.json
           touch _site/.nojekyll
       - name: Upload site
         uses: actions/upload-pages-artifact@v3
